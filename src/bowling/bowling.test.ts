@@ -6,4 +6,11 @@ describe('kata bowling', () => {
         const expected = 0;
         expect(score).toEqual(expected);
     });
+
+    it('should return twenty points with ten pairs of ones', () => {
+        const throws = "11 11 11 11 11 11 11 11 11 11";
+        const score = calculateScore(throws);
+        const expected = 20;
+        expect(score).toEqual(expected);
+    })
 })
