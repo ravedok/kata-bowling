@@ -1,0 +1,1 @@
+export const calculateScore = (throws: string) => 0;
