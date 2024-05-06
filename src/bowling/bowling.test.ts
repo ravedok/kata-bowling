@@ -21,5 +21,13 @@ describe('kata bowling', () => {
         expect(score).toEqual(expected);
     })
 
+    it('should return twenty with one strike, two hits next and sixteen misses', () => {
+        const throws = "X 23 -- -- -- -- -- -- -- --";
+        const score = calculateScore(throws);
+        const expected = 20;
+        expect(score).toEqual(expected);
+    })
+    
+
     
 })
