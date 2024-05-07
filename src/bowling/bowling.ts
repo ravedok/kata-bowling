@@ -2,48 +2,70 @@ const FAIL_VALUE = 0;
 const SPARE_VALUE = 10;
 const STRIKE_VALUE = 10;
 
-export const calculateScore = (throws: string) => {
-    const rounds = throws.split(' ');
-
-    return rounds.reduce((previous: 0, round: string, index: number) => {
-
-        if (isStrike(round)) {
-            const nextRoundIndex = index + 1;
-            const nextRound = rounds[nextRoundIndex];
-            return previous + STRIKE_VALUE + getRoundScore(nextRound, index + 1, rounds);
-
-        }
-
-        return previous +  getRoundScore(round, index, rounds);
-    }, 0);
-    ;
+type Round = {
+    type: 'strike' | 'spare' | 'default'
+    
+    throwings: [number, number]    
 }
 
-const isFail = (score: string) => score === '-';
-const isSpare = (score: string) => score === '/';
-const isStrike = (score: string) => score === 'X';
+export const calculateScore = (throws: string) => {
+    const rawRounds = throws.split(' ');
+    const rounds = rawRounds.map(rawRound => parseRound(rawRound));    
 
-const getThrowingValue = (throwing: string) => {
-    if (isFail(throwing)) {
-        return FAIL_VALUE;
+    return sumRounds(rounds);    
+}
+
+const sumRounds = (rounds: Round[]) => rounds.reduce((total, current, index) => {
+    total += getTotalFromRound(current);
+    if (current.type === 'strike') {
+        const nextRound = rounds[index + 1];
+        total += getTotalFromRound(nextRound);
     }
 
-    return Number(throwing);
+    if (current.type === 'spare') {
+        total += rounds[index + 1].throwings[0];
+    }
 
+    return total;
+}, 0)
+
+const getTotalFromRound = (round: Round) => round.throwings.reduce((a, b) => a + b);
+
+const parseRound = (rawRound: string): Round => {
+    if (isStrike(rawRound)) {
+        return {
+            type: 'strike',
+            throwings: [STRIKE_VALUE, 0]
+        }
+    }
+    const [first, second ] = getThrowingFromRawRound(rawRound);
+
+    if (isSpare(rawRound)) {
+        return {
+            type: 'spare',
+            throwings: [
+                first, 
+                STRIKE_VALUE - first
+            ]
+        };
+    }
+
+    return {
+        type: 'default',
+        throwings: [first, second]
+    }
 }
-function getRoundScore(round: string, roundIndex: number, rounds: string[]) {
-    const scores = round.split('').map((value, _, values) => {
 
-        if (isSpare(value)) {
-            const previousThrowing = Number(values[0]);
-            const nextThrowing = rounds[roundIndex + 1][0];
-            const nextThrowingScore = getThrowingValue(nextThrowing);
+const isFail = (raw: string) => raw === '-';
+const isSpare = (raw: string) => raw.includes('/');
+const isStrike = (raw: string) => raw === 'X';
 
-            return SPARE_VALUE - previousThrowing + nextThrowingScore;
+const getThrowingFromRawRound = (rawRound: string): number[] => 
+    rawRound.split('').map(value => {
+        if (isFail(value) || isSpare(value)) {
+            return 0;
         }
 
-        return getThrowingValue(value);
-    });
+        return Number(value);
 
-    return scores.reduce((a, b) => a + b, 0);
-}
+    });
